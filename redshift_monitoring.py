@@ -248,12 +248,11 @@ def monitor_cluster(config_sources):
         global debug
         debug = True
 
-    kms = boto3.client('kms', region_name=aws_region)
     cw = boto3.client('cloudwatch', region_name=aws_region)
     redshift = boto3.client('redshift', region_name=aws_region)
 
     if debug:
-        print("Connected to AWS KMS & CloudWatch in %s" % aws_region)
+        print("Connected to AWS CloudWatch & Redshift in %s" % aws_region)
 
     user = get_config_value(['DbUser', 'db_user', 'dbUser'], config_sources)
     host = get_config_value(['HostName', 'cluster_endpoint', 'dbHost', 'db_host'], config_sources)
@@ -273,30 +272,6 @@ def monitor_cluster(config_sources):
     # check if unencrypted password exists if no pgpasslib
     if pwd is None:
         pwd = get_config_value(['db_pwd'], config_sources)
-
-    # check for encrypted password if the above two don't exist
-    if pwd is None:
-        enc_password = get_config_value(['EncryptedPassword', 'encrypted_password', 'encrypted_pwd', 'dbPassword'],
-                                        config_sources)
-        if enc_password is not None:
-
-            # resolve the authorisation context, if there is one, and decrypt the password
-            auth_context = get_config_value('kms_auth_context', config_sources)
-
-            if auth_context is not None:
-                auth_context = json.loads(auth_context)
-
-            try:
-                if auth_context is None:
-                    pwd = kms.decrypt(CiphertextBlob=base64.b64decode(enc_password))[
-                        'Plaintext']
-                else:
-                    pwd = kms.decrypt(CiphertextBlob=base64.b64decode(enc_password), EncryptionContext=auth_context)[
-                        'Plaintext']
-            except:
-                print('KMS access failed: exception %s' % sys.exc_info()[1])
-                print('Encrypted Password: %s' % enc_password)
-                print('Encryption Context %s' % auth_context)
 
     # check for credentials using IAM database authentication
     if pwd is None:
@@ -374,7 +349,7 @@ def monitor_cluster(config_sources):
             print(put)
         try:
             cw.put_metric_data(
-                Namespace='Redshift',
+                Namespace='RedshiftAdvancedMonitoring',
                 MetricData=put
             )
         except:
