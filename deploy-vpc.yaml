@@ -1,6 +1,10 @@
 AWSTemplateFormatVersion: 2010-09-09
 Transform: AWS::Serverless-2016-10-31
 Parameters:
+  Environment:
+    Description: Environment (int,test,live)
+    Type: String
+    AllowedPattern: ^(int|test|live)$
   ClusterName:
     Default: my-redshift-cluster
     Description: Cluster Name
@@ -46,6 +50,7 @@ Resources:
   ScheduledFunction:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName: !Sub "RedshiftAdvancedMonitoring-${Environment}"
       Handler: lambda_function.lambda_handler
       Runtime: python3.7
       CodeUri:         
@@ -70,7 +75,6 @@ Resources:
               !Sub | 
                 {
                   "DbUser":"${DbUser}",
-                  "EncryptedPassword":"${EncryptedPassword}",
                   "ClusterName":"${ClusterName}",
                   "HostName":"${HostName}",
                   "HostPort":"${HostPort}",
