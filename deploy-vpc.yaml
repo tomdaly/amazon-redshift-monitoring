@@ -11,16 +11,6 @@ Parameters:
     Description: Name of the database user to connect to
     Type: String
     AllowedPattern: .*
-  EncryptedPassword:
-    Default: Base64 Encoded Encrypted Password
-    Description: Password encrypted with AWS KMS (leave blank to use IAM authentication token)
-    Type: String
-    AllowedPattern: .*
-  KmsKeyARN:
-    Default: arn:aws:kms:us-east-1:123456789012:key/MyKey
-    Description: KMS Key ARN used to decrypt the password (leave blank to use IAM authentication token)
-    Type: String
-    AllowedPattern: ^$|arn:aws:kms:[a-zA-Z0-9-]+:\d{12}:key\/.*
   HostName:
     Default: my-redshift-cluster.XXXXXXXXXXXX.<region>.redshift.amazonaws.com
     Description: Cluster Endpoint Address
@@ -107,7 +97,7 @@ Resources:
                   - "lambda.amazonaws.com"
         Policies:
           -
-            PolicyName: "LambdaRedshiftMonitoringPolicy"
+            PolicyName: "LambdaRedshiftMonitoringCloudWatchPolicy"
             PolicyDocument:
               Version: "2012-10-17"
               Statement:
@@ -118,6 +108,6 @@ Resources:
                   Resource: "*"
                 -
                   Effect: "Allow"
-                  Action:                
-                    - "kms:Decrypt"
-                  Resource: !Ref KmsKeyARN
+                  Action:
+                    - "redshift:GetClusterCredentials"
+                  Resource: !Sub "arn:aws:redshift:${AWS::Region}:${AWS::AccountId}:dbuser:${ClusterName}/${DbUser}"
